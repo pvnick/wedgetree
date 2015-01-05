@@ -42,6 +42,10 @@
     <IncludePath>C:\Users\pvnic_000\Downloads\boost_1_55_0\boost_1_55_0;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\pvnic_000\Downloads\boost_1_55_0\boost_1_55_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Users\pvnic_000\Downloads\boost_1_55_0\boost_1_55_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\pvnic_000\Downloads\boost_1_55_0\boost_1_55_0\stage\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -69,11 +73,12 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cli_options.cpp" />
-    <ClCompile Include="tree.cpp" />
+    <ClCompile Include="wedgetree.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="candidate.h" />
     <ClInclude Include="cli_options.h" />
-    <ClInclude Include="tree.h" />
+    <ClInclude Include="wedgetree.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

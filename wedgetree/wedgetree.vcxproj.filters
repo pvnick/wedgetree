@@ -21,15 +21,18 @@
     <ClCompile Include="cli_options.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tree.cpp">
+    <ClCompile Include="wedgetree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="tree.h">
+    <ClInclude Include="cli_options.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cli_options.h">
+    <ClInclude Include="candidate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wedgetree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

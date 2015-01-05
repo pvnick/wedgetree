@@ -1,5 +1,5 @@
-#ifndef HEADER_42D591DFA61520B
-#define HEADER_42D591DFA61520B
+#ifndef _CLI_OPTIONS_H_
+#define _CLI_OPTIONS_H_
 
 
 #include <stdexcept>
@@ -52,7 +52,7 @@ public:
 		throw std::logic_error("You must initialize the options class before retrieving an instance");
 	}
 	bool verbose() {
-		return this->count("verbose");
+		return this->count("verbose") > 0;
 	}
 };
 
