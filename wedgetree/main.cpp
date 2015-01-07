@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	unsigned int M = opts["M"].as<unsigned int>();
 	bool verbose = opts.verbose();
 
-	size_t B = 100;
+	size_t B = 10;
 	double r = 1000;
 	WedgeTree(timeseries, M, B, r, verbose);
 	return 0;
