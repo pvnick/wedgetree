@@ -35,5 +35,8 @@
     <ClInclude Include="wedgetree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="wedge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

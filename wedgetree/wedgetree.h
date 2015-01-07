@@ -10,149 +10,10 @@
 #include <algorithm>
 #include <memory>
 #include "candidate.h"
-
-struct Wedge {
-	std::vector<double> const& timeseries;
-	size_t M;
-	size_t B;
-	double r;
-	std::vector<double> U;
-	std::vector<double> L;
-	std::vector<double> UL_ED; //holds squared euclidean distance between individual U/L points
-	double ED = 0; //squared euclidean distance between upper and lower bounds
-	bool enlarged = false;
-	static size_t id_counter; //holds the number of instantiated wedges
-	size_t id; //set to the value of id_counter when this wedge was created
-	Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-		timeseries(timeseries),
-		M(M),
-		B(B),
-		r(r),
-		U(M, std::numeric_limits<double>::min()),
-		L(M, std::numeric_limits<double>::max()),
-		UL_ED(M, 0),
-		id(++id_counter)
-		{}
-	double enlargement_necessary(std::shared_ptr<Candidate> C, double abandon_after = std::numeric_limits<double>::max()) const {
-		double enlargement = 0;
-		if (enlarged) {
-			for (size_t i = 0; i != M; ++i) {
-				double val = C->series_normalized[i];
-				if (val < L[i])
-					enlargement += L[i] - val;
-				else if (val > U[i])
-					enlargement += val - U[i];
-				if (enlargement > abandon_after)
-					break;
-			}
-		}
-		return enlargement;
-	}
-	double enlargement_necessary(Wedge const& other_wedge, double abandon_after = std::numeric_limits<double>::max()) const {
-		double enlargement = 0;
-		if (enlarged) {
-			for (size_t i = 0; i != M; ++i) {
-				if (other_wedge.L[i] < L[i])
-					enlargement += L[i] - other_wedge.L[i];
-				if (other_wedge.U[i] > U[i])
-					enlargement += other_wedge.U[i] - U[i];
-				if (enlargement > abandon_after)
-					break;
-			}
-		}
-		return enlargement;
-	}
-	double get_new_ED(std::shared_ptr<Candidate> C, double abandon_after = std::numeric_limits<double>::max()) const {
-		//return the ED of the upper and lower bound if a candidate is added to this wedge
-		double new_ED = ED;
-		if (enlarged) {
-			for (size_t i = 0; i != M; ++i) {
-				bool outside_boundary = false;
-				double new_U = U[i], new_L = L[i];
-				if (C->series_normalized[i] > U[i]) {
-					new_U = C->series_normalized[i];
-					outside_boundary = true;
-				}
-				if (C->series_normalized[i] < L[i]) {
-					new_L = C->series_normalized[i];
-					outside_boundary = true;
-				}
-				if (outside_boundary) {
-					new_ED -= UL_ED[i];
-					new_ED += std::pow(new_U - new_L, 2);
-				}
-				if (new_ED > abandon_after)
-					break;
-			}
-		}
-		return new_ED;
-	}
-	double get_new_ED(Wedge const& other_wedge, double abandon_after = std::numeric_limits<double>::max()) const {
-		//return the ED of the upper and lower bound of the union between this wedge and another wedge
-		double new_ED = ED;
-		if (enlarged) {
-			for (size_t i = 0; i != M; ++i) {
-				bool outside_boundary = false;
-				double new_U = U[i], new_L = L[i];
-				if (other_wedge.U[i] > U[i]) {
-					new_U = other_wedge.U[i];
-					outside_boundary = true;
-				}
-				if (other_wedge.L[i] < L[i]) {
-					new_L = other_wedge.L[i];
-					outside_boundary = true;
-				}
-				if (outside_boundary) {
-					new_ED -= UL_ED[i];
-					new_ED += std::pow(new_U - new_L, 2);
-				}
-				if (new_ED > abandon_after)
-					break;
-			}
-		}
-		return new_ED;
-	}
-	void enlarge(std::shared_ptr<Candidate> C) {
-		for (size_t i = 0; i != M; ++i) {
-			bool outside_boundary = false;
-			if (C->series_normalized[i] > U[i]) {
-				U[i] = C->series_normalized[i];
-				outside_boundary = true;
-			}
-			if (C->series_normalized[i] < L[i]) {
-				L[i] = C->series_normalized[i];
-				outside_boundary = true;
-			}
-			if (outside_boundary) {
-				ED -= UL_ED[i];
-				UL_ED[i] = std::pow(U[i] - L[i], 2);
-				ED += UL_ED[i];
-			}
-		}
-		enlarged = true;
-	}
-	void enlarge(Wedge const& other_wedge) {
-		for (size_t i = 0; i != M; ++i) {
-			bool outside_boundary = false;
-			if (other_wedge.U[i] > U[i]) {
-				U[i] = other_wedge.U[i];
-				outside_boundary = true;
-			}
-			if (other_wedge.L[i] < L[i]) {
-				L[i] = other_wedge.L[i];
-				outside_boundary = true;
-			}
-			if (outside_boundary) {
-				ED -= UL_ED[i];
-				UL_ED[i] = std::pow(U[i] - L[i], 2);
-				ED += UL_ED[i];
-			}
-		}
-		enlarged = true;
-	}
-};
+#include "wedge.h"
 
 class Node {
+	//abstract base Node class
 protected:
 	std::vector<double> const& timeseries;
 	static size_t id_counter;
@@ -184,7 +45,8 @@ public:
 };
 
 class CandidateNode : public Node {
-	//exists as a leaf in the wedge tree. can hold unlimited number of candidates, but wedge ED must be under r
+	//exists as a true leaf in the wedge tree, held by LeafWedgeNodes. 
+	//can hold unlimited number of candidates, but wedge ED must be under r.
 	//not splittable
 private:
 	std::vector<std::shared_ptr<Candidate>> C_set; //holds the starting positions for each of the candidates
@@ -207,7 +69,7 @@ public:
 };
 
 class WedgeNode : public Node {
-	//exists as a leaf in the wedge tree, holding up to B candidate nodes
+	//wedge tree internal nodes, holding up to B child nodes (wedge or candidate nodes)
 	//splittable
 protected:
 	std::vector<std::shared_ptr<Node>> entries;
@@ -252,6 +114,7 @@ public:
 };
 
 class LeafWedgeNode : public WedgeNode {
+	//a "leaf" insofar as this type of node can only hold candidate nodes, not other wedge nodes
 public:
 	LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
 		WedgeNode(timeseries, M, B, r, NODE_LEAF_WEDGE)
@@ -287,6 +150,7 @@ public:
 };
 
 class InternalWedgeNode : public WedgeNode {
+	//internal wedge node which can only hold other wedge nodes
 public:
 	InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
 		WedgeNode(timeseries, M, B, r, NODE_INTERNAL_WEDGE)
@@ -308,7 +172,7 @@ public:
 				size_t index1 = i * num_entries + j;
 				size_t index2 = j * num_entries + i;
 				union_EDs[index1] = union_EDs[index2] = ED_tmp;
-				if (ED_tmp > max_union_ED) {
+				if (ED_tmp >= max_union_ED) { //GTE here guarantees that E1_index and E2_index will be set at least once before these loops complete
 					E1_index = i;
 					E2_index = j;
 					max_union_ED = ED_tmp;
@@ -403,17 +267,20 @@ public:
 		for (size_t C_index = 0; C_index + M - 1 != ts_size; ++C_index) {
 			std::shared_ptr<Candidate> C = std::make_shared<Candidate>(timeseries, C_index, M);
 			insert_timeseries(C);
-			/*std::vector<Node*> entries = root->get_entries();
-			for (size_t i = 0; i != entries.size(); ++i)
-			    std::cout << "i:" << i << " (" << entries[i]->get_height() << ") | ";
-			std::cout << std::endl;*/
+			/*std::vector<std::shared_ptr<Node>> entries = root->get_entries();
+			if ((C_index % 100) == 0) {
+				std::cout << C_index << " - ";
+				for (size_t i = 0; i != entries.size(); ++i)
+					std::cout << "i:" << i << " (" << entries[i]->get_height() << ") | ";
+				std::cout << std::endl;
+			}*/
 			if (verbose && (C_index % 1000) == 0) {
-				std::cout << "\r" << std::setprecision(4) << (100.0 * C_index / ts_size) << "% completed       ";
+				printf("\r%.2f%% completed", (100.0 * C_index / ts_size));
 				std::flush(std::cout);
 			}
 		}
 		if (verbose)
-			std::cout << "\r100% completed" << std::endl;
+			std::cout << "\r100.0% completed" << std::endl;
 	}
 	void insert_timeseries(std::shared_ptr<Candidate> C) {
 		if (root->insert_timeseries(C)) {
@@ -426,4 +293,4 @@ public:
 	}
 };
 
-#endif // header guard
+#endif
