@@ -21,7 +21,7 @@ Node::NodeType Node::get_node_type() const {
 }
 
 CandidateNode::CandidateNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-Node(timeseries, M, B, r, NODE_CANDIDATE)
+	Node(timeseries, M, B, r, NODE_CANDIDATE)
 { }
 
 bool CandidateNode::can_contain_candidate(std::shared_ptr<Candidate> C) const {
@@ -40,7 +40,7 @@ size_t CandidateNode::get_height() const {
 }
 
 WedgeNode::WedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, NodeType node_type) :
-Node(timeseries, M, B, r, node_type)
+	Node(timeseries, M, B, r, node_type)
 { }
 
 void WedgeNode::clear_entries() {
@@ -83,7 +83,7 @@ size_t WedgeNode::get_height() const {
 }
 
 LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-WedgeNode(timeseries, M, B, r, NODE_LEAF_WEDGE)
+	WedgeNode(timeseries, M, B, r, NODE_LEAF_WEDGE)
 { }
 
 bool LeafWedgeNode::insert_timeseries(std::shared_ptr<Candidate> C) {
@@ -118,7 +118,7 @@ bool LeafWedgeNode::insert_timeseries(std::shared_ptr<Candidate> C) {
 
 
 InternalWedgeNode::InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-WedgeNode(timeseries, M, B, r, NODE_INTERNAL_WEDGE)
+	WedgeNode(timeseries, M, B, r, NODE_INTERNAL_WEDGE)
 { }
 
 void InternalWedgeNode::split_child(size_t target_entry_index) {
@@ -181,6 +181,7 @@ void InternalWedgeNode::split_child(size_t target_entry_index) {
 	entries[target_entry_index] = new_entry1;
 	entries.push_back(new_entry2);
 }
+
 bool InternalWedgeNode::insert_timeseries(std::shared_ptr<Candidate> C) {
 	//returns true if current node's entry count exceeds B and must be split, false otherwise
 	bool split_required = false;

@@ -1,5 +1,5 @@
-#ifndef _CANDIDATE_H_
-#define _CANDIDATE_H_
+#ifndef HEADER_3DC82AAF72A4411C887EB04B07B09032
+#define HEADER_3DC82AAF72A4411C887EB04B07B09032
 
 #include <vector>
 #include <stdexcept>
