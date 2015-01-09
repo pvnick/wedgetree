@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\wedgetree">
+      <UniqueIdentifier>{5ce4bdce-6140-48af-8011-7fb1539db6c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\wedgetree">
+      <UniqueIdentifier>{7412bfcf-d286-4665-9878-6824d04fa0dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -22,7 +28,13 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="wedgetree.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\wedgetree</Filter>
+    </ClCompile>
+    <ClCompile Include="wedge.cpp">
+      <Filter>Source Files\wedgetree</Filter>
+    </ClCompile>
+    <ClCompile Include="node.cpp">
+      <Filter>Source Files\wedgetree</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -33,10 +45,13 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="wedgetree.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\wedgetree</Filter>
     </ClInclude>
     <ClInclude Include="wedge.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\wedgetree</Filter>
+    </ClInclude>
+    <ClInclude Include="node.h">
+      <Filter>Header Files\wedgetree</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

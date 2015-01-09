@@ -133,11 +133,14 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cli_options.cpp" />
+    <ClCompile Include="node.cpp" />
+    <ClCompile Include="wedge.cpp" />
     <ClCompile Include="wedgetree.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="candidate.h" />
     <ClInclude Include="cli_options.h" />
+    <ClInclude Include="node.h" />
     <ClInclude Include="wedge.h" />
     <ClInclude Include="wedgetree.h" />
   </ItemGroup>
