@@ -30,8 +30,8 @@ bool CandidateNode::can_contain_candidate(Candidate const& C) const {
 }
 
 bool CandidateNode::insert_timeseries(Candidate&& C) {
+	W.enlarge(C);
 	C_set.push_back(std::forward<Candidate>(C));
-	W.enlarge(std::forward<Candidate>(C));
 	return false;
 }
 
@@ -89,6 +89,7 @@ LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, si
 bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 	//returns true if current node's entry count exceeds B and must be split, false otherwise
 	bool split_required = false;
+	W.enlarge(C);
 	if (entries.empty()) {
 		std::shared_ptr<CandidateNode>n = std::make_shared<CandidateNode>(timeseries, M, B, r);
 		n->insert_timeseries(std::forward<Candidate>(C));
@@ -112,7 +113,6 @@ bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 		//not enough space to contain the new entry in the current node, need to split
 		split_required = true;
 	}
-	W.enlarge(C);
 	return split_required;
 }
 
@@ -191,6 +191,7 @@ void InternalWedgeNode::split_child(size_t target_entry_index) {
 bool InternalWedgeNode::insert_timeseries(Candidate&& C) {
 	//returns true if current node's entry count exceeds B and must be split, false otherwise
 	bool split_required = false;
+	W.enlarge(C);
 	if (entries.empty()) {
 		std::shared_ptr<LeafWedgeNode> n = std::make_shared<LeafWedgeNode>(timeseries, M, B, r);
 		//no need to check for if a split is necessary since the candidate is guaranteed to insertable into a fresh node
@@ -209,6 +210,5 @@ bool InternalWedgeNode::insert_timeseries(Candidate&& C) {
 			split_required = true;
 		}
 	}
-	W.enlarge(C);
 	return split_required;
 }

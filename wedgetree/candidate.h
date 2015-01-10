@@ -51,19 +51,7 @@ struct Candidate {
 		range = max - min;
 	}
 	//visual studio does not yet support default move constructors as of VS 2013
-	Candidate(Candidate const& other) = delete; /*:
-		timeseries_pos(other.timeseries_pos),
-		length(other.length),
-		timeseries(other.timeseries),
-		series_normalized(other.series_normalized),
-		mean(other.mean),
-		stddev(other.stddev),
-		max(other.max),
-		min(other.min),
-		range(other.range)
-	{
-		std::cout << "copy constructor" << std::endl;
-	}*/
+	Candidate(Candidate const& other) = delete;
 	Candidate(Candidate&& other) :
 		timeseries_pos(other.timeseries_pos),
 		length(other.length),
@@ -74,9 +62,7 @@ struct Candidate {
 		max(other.max),
 		min(other.min),
 		range(other.range)
-	{
-		std::cout << "move constructor" << std::endl;
-	}
+	{ }
 };
 
 #endif
