@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include <limits>
+#include <cmath>
 
 struct Candidate {
 	size_t timeseries_pos;

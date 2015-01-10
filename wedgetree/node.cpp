@@ -30,7 +30,7 @@ bool CandidateNode::can_contain_candidate(Candidate const& C) const {
 }
 
 bool CandidateNode::insert_timeseries(Candidate&& C) {
-	C_set.push_back(C);
+	C_set.push_back(std::forward<Candidate>(C));
 	W.enlarge(std::forward<Candidate>(C));
 	return false;
 }
