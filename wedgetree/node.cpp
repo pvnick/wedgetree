@@ -24,14 +24,14 @@ CandidateNode::CandidateNode(std::vector<double> const& timeseries, size_t M, si
 	Node(timeseries, M, B, r, NODE_CANDIDATE)
 { }
 
-bool CandidateNode::can_contain_candidate(std::shared_ptr<Candidate> C) const {
+bool CandidateNode::can_contain_candidate(Candidate const& C) const {
 	double ED_after_insertion = W.get_new_ED(C, r);
 	return ED_after_insertion <= r;
 }
 
-bool CandidateNode::insert_timeseries(std::shared_ptr<Candidate> C) {
+bool CandidateNode::insert_timeseries(Candidate&& C) {
 	C_set.push_back(C);
-	W.enlarge(C);
+	W.enlarge(std::forward<Candidate>(C));
 	return false;
 }
 
@@ -57,7 +57,7 @@ void WedgeNode::add_entry(std::shared_ptr<Node> entry) {
 	W.enlarge(entry->get_wedge());
 }
 
-size_t WedgeNode::get_min_enlargement_insertion_target(std::shared_ptr<Candidate> C) const {
+size_t WedgeNode::get_min_enlargement_insertion_target(Candidate const& C) const {
 	//this call assumes at least one entry present and will demonstrate undefined behavior otherwise
 	size_t target_index = 0;
 	double min_enlargement = entries[0]->get_wedge().enlargement_necessary(C, std::numeric_limits<double>::max());
@@ -86,25 +86,25 @@ LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, si
 	WedgeNode(timeseries, M, B, r, NODE_LEAF_WEDGE)
 { }
 
-bool LeafWedgeNode::insert_timeseries(std::shared_ptr<Candidate> C) {
+bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 	//returns true if current node's entry count exceeds B and must be split, false otherwise
 	bool split_required = false;
 	if (entries.empty()) {
 		std::shared_ptr<CandidateNode>n = std::make_shared<CandidateNode>(timeseries, M, B, r);
-		n->insert_timeseries(C);
+		n->insert_timeseries(std::forward<Candidate>(C));
 		entries.push_back(n);
 	}
 	else {
 		size_t target_index = get_min_enlargement_insertion_target(C);
 		std::shared_ptr<CandidateNode> target = std::static_pointer_cast<CandidateNode>(entries[target_index]);
 		if (target->can_contain_candidate(C)) {
-			target->insert_timeseries(C);
+			target->insert_timeseries(std::forward<Candidate>(C));
 		}
 		else {
 			//insertion to entry at a leaf node can be done only when the enlargement satisfies the condition W_UL <= r; otherwise
 			//we have to create a new entry at that leaf node
 			std::shared_ptr<CandidateNode> n = std::make_shared<CandidateNode>(timeseries, M, B, r);
-			n->insert_timeseries(C);
+			n->insert_timeseries(std::forward<Candidate>(C));
 			entries.push_back(n);
 		}
 	}
@@ -115,6 +115,12 @@ bool LeafWedgeNode::insert_timeseries(std::shared_ptr<Candidate> C) {
 	W.enlarge(C);
 	return split_required;
 }
+
+/*
+std::shared_ptr<std::vector<CandidateNode>> LeafWedgeNode::getMergedCandidateNodes() {
+	std::shared_ptr<std::
+}
+*/
 
 
 InternalWedgeNode::InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
@@ -182,19 +188,19 @@ void InternalWedgeNode::split_child(size_t target_entry_index) {
 	entries.push_back(new_entry2);
 }
 
-bool InternalWedgeNode::insert_timeseries(std::shared_ptr<Candidate> C) {
+bool InternalWedgeNode::insert_timeseries(Candidate&& C) {
 	//returns true if current node's entry count exceeds B and must be split, false otherwise
 	bool split_required = false;
 	if (entries.empty()) {
 		std::shared_ptr<LeafWedgeNode> n = std::make_shared<LeafWedgeNode>(timeseries, M, B, r);
 		//no need to check for if a split is necessary since the candidate is guaranteed to insertable into a fresh node
-		n->insert_timeseries(C);
+		n->insert_timeseries(std::forward<Candidate>(C));
 		add_entry(n);
 	}
 	else {
 		size_t target_index = get_min_enlargement_insertion_target(C);
 		std::shared_ptr<WedgeNode> target = std::static_pointer_cast<WedgeNode>(entries[target_index]);
-		if (target->insert_timeseries(C)) {
+		if (target->insert_timeseries(std::forward<Candidate>(C))) {
 			//target experienced overflow and must be split
 			split_child(target_index);
 		}

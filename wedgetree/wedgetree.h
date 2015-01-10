@@ -22,7 +22,7 @@ private:
 	bool verbose;
 public:
 	WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, bool verbose);
-	void insert_timeseries(std::shared_ptr<Candidate> C);
+	void insert_timeseries(Candidate&& C);
 };
 
 #endif

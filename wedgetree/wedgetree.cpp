@@ -15,8 +15,7 @@ WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, 
 	}
 	size_t ts_size = timeseries.size();
 	for (size_t C_index = 0; C_index + M - 1 != ts_size; ++C_index) {
-		std::shared_ptr<Candidate> C = std::make_shared<Candidate>(timeseries, C_index, M);
-		insert_timeseries(C);
+		insert_timeseries(Candidate(timeseries, C_index, M));
 		/*std::vector<std::shared_ptr<Node>> entries = root->get_entries();
 		if ((C_index % 100) == 0) {
 			std::cout << C_index << " - ";
@@ -33,8 +32,8 @@ WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, 
 		std::cout << "\r100.0% completed" << std::endl;
 }
 
-void WedgeTree::insert_timeseries(std::shared_ptr<Candidate> C) {
-	if (root->insert_timeseries(C)) {
+void WedgeTree::insert_timeseries(Candidate&& C) {
+	if (root->insert_timeseries(std::forward<Candidate>(C))) {
 		//root overflow. add a new root to contain the old root, then split the old root
 		std::shared_ptr<InternalWedgeNode> old_root = root;
 		root = std::make_shared<InternalWedgeNode>(timeseries, M, B, r);

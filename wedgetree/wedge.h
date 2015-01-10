@@ -21,11 +21,11 @@ private:
 	size_t id; //set to the value of id_counter when this wedge was created
 public:
 	Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r);
-	double enlargement_necessary(std::shared_ptr<Candidate> C, double abandon_after) const;
+	double enlargement_necessary(Candidate const& C, double abandon_after) const;
 	double enlargement_necessary(Wedge const& other_wedge, double abandon_after) const;
-	double get_new_ED(std::shared_ptr<Candidate> C, double abandon_after) const;
+	double get_new_ED(Candidate const& C, double abandon_after) const;
 	double get_new_ED(Wedge const& other_wedge, double abandon_after) const;
-	void enlarge(std::shared_ptr<Candidate> C);
+	void enlarge(Candidate const& C);
 	void enlarge(Wedge const& other_wedge);
 };
 

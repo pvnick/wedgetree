@@ -13,11 +13,11 @@ Wedge::Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r
 	id(++id_counter)
 { }
 
-double Wedge::enlargement_necessary(std::shared_ptr<Candidate> C, double abandon_after = std::numeric_limits<double>::max()) const {
+double Wedge::enlargement_necessary(Candidate const& C, double abandon_after = std::numeric_limits<double>::max()) const {
 	double enlargement = 0;
 	if (enlarged) {
 		for (size_t i = 0; i != M; ++i) {
-			double val = C->series_normalized[i];
+			double val = C.series_normalized[i];
 			if (val < L[i])
 				enlargement += L[i] - val;
 			else if (val > U[i])
@@ -44,19 +44,19 @@ double Wedge::enlargement_necessary(Wedge const& other_wedge, double abandon_aft
 	return enlargement;
 }
 
-double Wedge::get_new_ED(std::shared_ptr<Candidate> C, double abandon_after = std::numeric_limits<double>::max()) const {
+double Wedge::get_new_ED(Candidate const& C, double abandon_after = std::numeric_limits<double>::max()) const {
 	//return the ED of the upper and lower bound if a candidate is added to this wedge
 	double new_ED = ED;
 	if (enlarged) {
 		for (size_t i = 0; i != M; ++i) {
 			bool outside_boundary = false;
 			double new_U = U[i], new_L = L[i];
-			if (C->series_normalized[i] > U[i]) {
-				new_U = C->series_normalized[i];
+			if (C.series_normalized[i] > U[i]) {
+				new_U = C.series_normalized[i];
 				outside_boundary = true;
 			}
-			if (C->series_normalized[i] < L[i]) {
-				new_L = C->series_normalized[i];
+			if (C.series_normalized[i] < L[i]) {
+				new_L = C.series_normalized[i];
 				outside_boundary = true;
 			}
 			if (outside_boundary) {
@@ -96,15 +96,15 @@ double Wedge::get_new_ED(Wedge const& other_wedge, double abandon_after = std::n
 	return new_ED;
 }
 
-void Wedge::enlarge(std::shared_ptr<Candidate> C) {
+void Wedge::enlarge(Candidate const& C) {
 	for (size_t i = 0; i != M; ++i) {
 		bool outside_boundary = false;
-		if (C->series_normalized[i] > U[i]) {
-			U[i] = C->series_normalized[i];
+		if (C.series_normalized[i] > U[i]) {
+			U[i] = C.series_normalized[i];
 			outside_boundary = true;
 		}
-		if (C->series_normalized[i] < L[i]) {
-			L[i] = C->series_normalized[i];
+		if (C.series_normalized[i] < L[i]) {
+			L[i] = C.series_normalized[i];
 			outside_boundary = true;
 		}
 		if (outside_boundary) {

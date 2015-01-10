@@ -24,7 +24,7 @@ protected:
 	enum NodeType { NODE_CANDIDATE, NODE_INTERNAL_WEDGE, NODE_LEAF_WEDGE };
 	NodeType node_type;
 public:
-	virtual bool insert_timeseries(std::shared_ptr<Candidate> C) = 0;
+	virtual bool insert_timeseries(Candidate&& C) = 0;
 	virtual size_t get_height() const = 0;
 	Node(std::vector<double> const& timeseries, size_t M, size_t B, double r, NodeType node_type);
 	Wedge const& get_wedge() const;
@@ -36,11 +36,11 @@ class CandidateNode : public Node {
 	//can hold unlimited number of candidates, but wedge ED must be under r.
 	//not splittable
 private:
-	std::vector<std::shared_ptr<Candidate>> C_set; //holds the starting positions for each of the candidates
+	std::vector<Candidate> C_set; //holds the starting positions for each of the candidates
 public:
 	CandidateNode(std::vector<double> const& timeseries, size_t M, size_t B, double r);
-	bool can_contain_candidate(std::shared_ptr<Candidate> C) const;
-	bool insert_timeseries(std::shared_ptr<Candidate> C);
+	bool can_contain_candidate(Candidate const& C) const;
+	bool insert_timeseries(Candidate&& C);
 	size_t get_height() const;
 };
 
@@ -53,9 +53,9 @@ public:
 	void clear_entries();
 	std::vector<std::shared_ptr<Node>> const& get_entries() const;
 	void add_entry(std::shared_ptr<Node> entry);
-	size_t get_min_enlargement_insertion_target(std::shared_ptr<Candidate> C) const;
+	size_t get_min_enlargement_insertion_target(Candidate const& C) const;
 	size_t get_height() const;
-	std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes() = 0;
+	//std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes() = 0;
 };
 
 class LeafWedgeNode : public WedgeNode {
@@ -63,8 +63,8 @@ class LeafWedgeNode : public WedgeNode {
     //not splittable
 public:
 	LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r);
-	bool insert_timeseries(std::shared_ptr<Candidate> C);
-	std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes();
+	bool insert_timeseries(Candidate&& C);
+	//std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes();
 };
 
 class InternalWedgeNode : public WedgeNode {
@@ -73,8 +73,8 @@ class InternalWedgeNode : public WedgeNode {
 public:
 	InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r);
 	void split_child(size_t target_entry_index);
-	bool insert_timeseries(std::shared_ptr<Candidate> C);
-	std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes();
+	bool insert_timeseries(Candidate&& C);
+	//std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes();
 };
 
 #endif
