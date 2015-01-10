@@ -46,7 +46,6 @@ public:
 
 class WedgeNode : public Node {
 	//wedge tree internal nodes, holding up to B child nodes (wedge or candidate nodes)
-	//splittable
 protected:
 	std::vector<std::shared_ptr<Node>> entries;
 public:
@@ -56,21 +55,26 @@ public:
 	void add_entry(std::shared_ptr<Node> entry);
 	size_t get_min_enlargement_insertion_target(std::shared_ptr<Candidate> C) const;
 	size_t get_height() const;
+	std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes() = 0;
 };
 
 class LeafWedgeNode : public WedgeNode {
 	//a "leaf" insofar as this type of node is at the edge of the tree and can only hold candidate nodes, not other wedge nodes
+    //not splittable
 public:
 	LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r);
 	bool insert_timeseries(std::shared_ptr<Candidate> C);
+	std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes();
 };
 
 class InternalWedgeNode : public WedgeNode {
 	//internal wedge node which can only hold other wedge nodes
+	//splittable
 public:
 	InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r);
 	void split_child(size_t target_entry_index);
 	bool insert_timeseries(std::shared_ptr<Candidate> C);
+	std::shared_ptr<std::vector<CandidateNode>> getMergedCandidateNodes();
 };
 
 #endif
