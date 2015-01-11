@@ -45,7 +45,7 @@ void CandidateNode::move_candidates(std::list<Candidate>* dest_list) {
 	C_set.clear();
 }
 
-void CandidateNode::merge(CandidateNode* src) {
+void CandidateNode::merge_and_destroy_source(CandidateNode* src) {
 	W.enlarge(src->get_wedge());
 	src->move_candidates(&C_set);
 }
@@ -109,7 +109,7 @@ void WedgeNode::merge_candidate_node_list(std::list<CandidateNode>* candidate_no
 		++node_inner_iter;
 		while (node_inner_iter != candidate_node_list->end()) {
 			if (node_outer_iter->can_contain_wedge(node_inner_iter->get_wedge())) {
-				node_outer_iter->merge(&*node_inner_iter);
+				node_outer_iter->merge_and_destroy_source(&*node_inner_iter);
 				node_inner_iter = candidate_node_list->erase(node_inner_iter);
 			}
 			else {
@@ -157,6 +157,8 @@ std::list<CandidateNode> LeafWedgeNode::get_merged_candidate_nodes(bool show_pro
 	std::list<CandidateNode> merged_nodes;
 	for (auto node_ptr: entries)
 		merged_nodes.push_back(*(std::static_pointer_cast<CandidateNode>(node_ptr))); //make copies of the candidate nodes since we need to modify them
+	if (show_progress && merged_nodes.size() > 1000)
+		std::cout << "Starting time-consuming merge of " << merged_nodes.size() << " nodes" << std::endl;
 	WedgeNode::merge_candidate_node_list(&merged_nodes);
 	++*leaf_wedge_node_counter;
 	if (show_progress && (*leaf_wedge_node_counter % 100) == 0) {

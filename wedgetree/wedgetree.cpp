@@ -51,6 +51,7 @@ std::list<CandidateNode> WedgeTree::get_merged_candidate_nodes() const {
 	}
 	size_t total_num_candidate_nodes = root->count_candidate_nodes();
 	size_t total_num_leaf_wedge_nodes = root->count_leaf_wedge_nodes();
+	std::cout << total_num_candidate_nodes << std::endl;
 	size_t leaf_wedge_node_counter = 0;
 	std::list<CandidateNode> merged_nodes = root->get_merged_candidate_nodes(verbose, total_num_leaf_wedge_nodes, &leaf_wedge_node_counter);
 	if (verbose) {

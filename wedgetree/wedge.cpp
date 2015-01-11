@@ -93,6 +93,9 @@ double Wedge::get_new_ED(Wedge const& other_wedge, double abandon_after = std::n
 				break;
 		}
 	}
+	else {
+		new_ED = other_wedge.ED;
+	}
 	return new_ED;
 }
 

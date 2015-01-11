@@ -46,7 +46,7 @@ public:
 	bool can_contain_wedge(Wedge const& wedge) const;
 	bool insert_timeseries(Candidate&& C);
 	std::list<Candidate> const& get_candidates() const;
-	void merge(CandidateNode* src);
+	void merge_and_destroy_source(CandidateNode* src);
 	void move_candidates(std::list<Candidate>* dest_list);
 	size_t get_height() const;
 };
