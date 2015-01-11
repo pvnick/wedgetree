@@ -103,22 +103,6 @@ size_t WedgeNode::get_height() const {
 	return 1 + max_height;
 }
 
-void WedgeNode::merge_candidate_node_list(std::list<CandidateNode>* candidate_node_list) {
-	for (auto node_outer_iter = candidate_node_list->begin(); node_outer_iter != candidate_node_list->end(); ++node_outer_iter) {
-		auto node_inner_iter = node_outer_iter;
-		++node_inner_iter;
-		while (node_inner_iter != candidate_node_list->end()) {
-			if (node_outer_iter->can_contain_wedge(node_inner_iter->get_wedge())) {
-				node_outer_iter->merge_and_destroy_source(&*node_inner_iter);
-				node_inner_iter = candidate_node_list->erase(node_inner_iter);
-			}
-			else {
-				++node_inner_iter;
-			}
-		}
-	}
-}
-
 LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
 	WedgeNode(timeseries, M, B, r, NODE_LEAF_WEDGE)
 { }
@@ -159,7 +143,20 @@ std::list<CandidateNode> LeafWedgeNode::get_merged_candidate_nodes(bool show_pro
 		merged_nodes.push_back(*(std::static_pointer_cast<CandidateNode>(node_ptr))); //make copies of the candidate nodes since we need to modify them
 	if (show_progress && merged_nodes.size() > 1000)
 		std::cout << "Starting time-consuming merge of " << merged_nodes.size() << " nodes" << std::endl;
-	WedgeNode::merge_candidate_node_list(&merged_nodes);
+	auto node_iter_end = merged_nodes.end();
+	for (auto node_outer_iter = merged_nodes.begin(); node_outer_iter != node_iter_end; ++node_outer_iter) {
+		auto node_inner_iter = node_outer_iter;
+		++node_inner_iter;
+		while (node_inner_iter != node_iter_end) {
+			if (node_outer_iter->can_contain_wedge(node_inner_iter->get_wedge())) {
+				node_outer_iter->merge_and_destroy_source(&*node_inner_iter);
+				node_inner_iter = merged_nodes.erase(node_inner_iter);
+			}
+			else {
+				++node_inner_iter;
+			}
+		}
+	}
 	++*leaf_wedge_node_counter;
 	if (show_progress && (*leaf_wedge_node_counter % 100) == 0) {
 		printf("\r%.2f%% completed", (100.0 * *leaf_wedge_node_counter / total_num_leaf_wedge_nodes));
@@ -268,11 +265,35 @@ bool InternalWedgeNode::insert_timeseries(Candidate&& C) {
 
 std::list<CandidateNode> InternalWedgeNode::get_merged_candidate_nodes(bool show_progress, size_t total_num_leaf_wedge_nodes, size_t* leaf_wedge_node_counter) const {
 	std::list<CandidateNode> merged_nodes;
-	for (auto node_ptr : entries)
+	std::list<std::list<CandidateNode>> merged_candidate_node_lists;
+	for (auto node_ptr : entries) {
 		//append all merged descendent candidate nodes to a single list
-		merged_nodes.splice(merged_nodes.end(), std::static_pointer_cast<WedgeNode>(node_ptr)->get_merged_candidate_nodes(show_progress, total_num_leaf_wedge_nodes, leaf_wedge_node_counter));
-	//merge the candidate nodes in the new list
-	WedgeNode::merge_candidate_node_list(&merged_nodes);
+		merged_candidate_node_lists.push_back(std::static_pointer_cast<WedgeNode>(node_ptr)->get_merged_candidate_nodes(show_progress, total_num_leaf_wedge_nodes, leaf_wedge_node_counter));
+	}
+	auto node_list_iter_end = merged_candidate_node_lists.end();
+	for (auto node_list_iter = merged_candidate_node_lists.begin(); node_list_iter != node_list_iter_end; ++node_list_iter) {
+		auto next_node_list_iter = node_list_iter;
+		++next_node_list_iter; //all nodes have already been been compared to each other within their own list
+		if (next_node_list_iter != node_list_iter_end) {
+			auto node_outer_iter_end = node_list_iter->end();
+			for (auto node_outer_iter = node_list_iter->begin(); node_outer_iter != node_outer_iter_end; ++node_outer_iter) {
+				auto node_inner_iter = next_node_list_iter->begin();
+				auto node_inner_iter_end = next_node_list_iter->end();
+				while (node_inner_iter != node_inner_iter_end) {
+					if (node_outer_iter->can_contain_wedge(node_inner_iter->get_wedge())) {
+						node_outer_iter->merge_and_destroy_source(&*node_inner_iter);
+						node_inner_iter = next_node_list_iter->erase(node_inner_iter);
+					}
+					else {
+						++node_inner_iter;
+					}
+				}
+			}
+		}
+	}
+	for (std::list<CandidateNode>& merged_node_list : merged_candidate_node_lists) {
+		merged_nodes.splice(merged_nodes.end(), merged_node_list);
+	}
 	return merged_nodes;
 }
 

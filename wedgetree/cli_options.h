@@ -3,6 +3,7 @@
 
 
 #include <stdexcept>
+#include <iostream>
 #include <boost/program_options.hpp>
 
 namespace program_options = boost::program_options;

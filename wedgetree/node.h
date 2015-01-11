@@ -65,7 +65,6 @@ public:
 	virtual std::list<CandidateNode> get_merged_candidate_nodes(bool show_progress, size_t total_num_leaf_wedge_nodes, size_t* leaf_wedge_node_counter) const = 0;
 	virtual size_t count_leaf_wedge_nodes() = 0;
 	virtual size_t count_candidate_nodes() = 0;
-	static void merge_candidate_node_list(std::list<CandidateNode>* candidate_node_list);
 };
 
 class LeafWedgeNode : public WedgeNode {

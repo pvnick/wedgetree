@@ -3,22 +3,33 @@
 
 #include <memory>
 #include <vector>
+#include <boost/heap/d_ary_heap.hpp>
 #include "candidate.h"
 
 class Wedge {
 	//every node stores a wedge, which tightly bounds all of its descendent candidates
 private:
+	struct BoundaryPosition {
+		size_t c_index;
+		double ED = 0;
+		double Ui = std::numeric_limits<double>::min();
+		double Li = std::numeric_limits<double>::max();
+		bool operator<(BoundaryPosition const& other) const {
+			return ED < other.ED;
+		};
+		BoundaryPosition(size_t c_index) : c_index(c_index) {}
+	};
+	typedef std::vector<std::shared_ptr<BoundaryPosition>> sorter;
 	std::vector<double> const& timeseries;
 	size_t M;
 	size_t B;
 	double r;
-	std::vector<double> U;
-	std::vector<double> L;
-	std::vector<double> UL_ED; //holds squared euclidean distance between individual U/L points
 	double ED = 0; //squared euclidean distance between upper and lower bounds
 	bool enlarged = false;
 	static size_t id_counter; //holds the number of instantiated wedges
 	size_t id; //set to the value of id_counter when this wedge was created
+	sorter sorted_boundary;
+	std::vector<std::shared_ptr<BoundaryPosition>> boundary_handles_by_c_index;
 public:
 	Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r);
 	double enlargement_necessary(Candidate const& C, double abandon_after) const;
