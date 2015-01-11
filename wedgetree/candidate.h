@@ -50,18 +50,30 @@ struct Candidate {
 		//lemire_envelope = LemireEnvelope(series_normalized, 0, WARPING_r);
 		range = max - min;
 	}
+	Candidate(Candidate const& src) :
+		timeseries_pos(src.timeseries_pos),
+		length(src.length),
+		timeseries(src.timeseries),
+		series_normalized(src.series_normalized),
+		mean(src.mean),
+		stddev(src.stddev),
+		max(src.max),
+		min(src.min),
+		range(src.range)
+	{ 
+		//std::cout << "copy constructor" << std::endl;
+	}
 	//visual studio does not yet support default move constructors as of VS 2013
-	Candidate(Candidate const& other) = delete;
-	Candidate(Candidate&& other) :
-		timeseries_pos(other.timeseries_pos),
-		length(other.length),
-		timeseries(other.timeseries),
-		series_normalized(std::move(other.series_normalized)),
-		mean(other.mean),
-		stddev(other.stddev),
-		max(other.max),
-		min(other.min),
-		range(other.range)
+	Candidate(Candidate&& src) :
+		timeseries_pos(src.timeseries_pos),
+		length(src.length),
+		timeseries(src.timeseries),
+		series_normalized(std::move(src.series_normalized)),
+		mean(src.mean),
+		stddev(src.stddev),
+		max(src.max),
+		min(src.min),
+		range(src.range)
 	{ }
 };
 

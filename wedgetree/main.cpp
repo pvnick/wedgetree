@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
 
 	size_t B = 5;
 	double r = 300;
-	WedgeTree(timeseries, M, B, r, verbose);
+	WedgeTree tree(timeseries, M, B, r, verbose);
+	tree.get_merged_candidate_nodes();
 	return 0;
 }

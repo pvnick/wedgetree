@@ -29,10 +29,29 @@ bool CandidateNode::can_contain_candidate(Candidate const& C) const {
 	return ED_after_insertion <= r;
 }
 
+bool CandidateNode::can_contain_wedge(Wedge const& wedge) const {
+	double ED_after_insertion = W.get_new_ED(wedge, r);
+	return ED_after_insertion <= r;
+}
+
 bool CandidateNode::insert_timeseries(Candidate&& C) {
 	W.enlarge(C);
 	C_set.push_back(std::forward<Candidate>(C));
 	return false;
+}
+
+void CandidateNode::move_candidates(std::list<Candidate>* dest_list) {
+	std::move(C_set.begin(), C_set.end(), std::back_inserter(*dest_list));
+	C_set.clear();
+}
+
+void CandidateNode::merge(CandidateNode* src) {
+	W.enlarge(src->get_wedge());
+	src->move_candidates(&C_set);
+}
+
+std::list<Candidate> const& CandidateNode::get_candidates() const {
+	return C_set;
 }
 
 size_t CandidateNode::get_height() const {
@@ -41,7 +60,9 @@ size_t CandidateNode::get_height() const {
 
 WedgeNode::WedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, NodeType node_type) :
 	Node(timeseries, M, B, r, node_type)
-{ }
+{ 
+	entries.reserve(B + 1); //reserve space for allowed capacity plus one for pre-splitting overflow
+}
 
 void WedgeNode::clear_entries() {
 	entries.clear();
@@ -53,8 +74,8 @@ std::vector<std::shared_ptr<Node>> const& WedgeNode::get_entries() const {
 
 void WedgeNode::add_entry(std::shared_ptr<Node> entry) {
 	//note: this function does not check for entry count overflows
-	entries.push_back(entry);
 	W.enlarge(entry->get_wedge());
+	entries.push_back(entry);
 }
 
 size_t WedgeNode::get_min_enlargement_insertion_target(Candidate const& C) const {
@@ -80,6 +101,22 @@ size_t WedgeNode::get_height() const {
 			max_height = height;
 	}
 	return 1 + max_height;
+}
+
+void WedgeNode::merge_candidate_node_list(std::list<CandidateNode>* candidate_node_list) {
+	for (auto node_outer_iter = candidate_node_list->begin(); node_outer_iter != candidate_node_list->end(); ++node_outer_iter) {
+		auto node_inner_iter = node_outer_iter;
+		++node_inner_iter;
+		while (node_inner_iter != candidate_node_list->end()) {
+			if (node_outer_iter->can_contain_wedge(node_inner_iter->get_wedge())) {
+				node_outer_iter->merge(&*node_inner_iter);
+				node_inner_iter = candidate_node_list->erase(node_inner_iter);
+			}
+			else {
+				++node_inner_iter;
+			}
+		}
+	}
 }
 
 LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
@@ -116,12 +153,26 @@ bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 	return split_required;
 }
 
-/*
-std::shared_ptr<std::vector<CandidateNode>> LeafWedgeNode::getMergedCandidateNodes() {
-	std::shared_ptr<std::
+std::list<CandidateNode> LeafWedgeNode::get_merged_candidate_nodes(bool show_progress, size_t total_num_leaf_wedge_nodes, size_t* leaf_wedge_node_counter) const {
+	std::list<CandidateNode> merged_nodes;
+	for (auto node_ptr: entries)
+		merged_nodes.push_back(*(std::static_pointer_cast<CandidateNode>(node_ptr))); //make copies of the candidate nodes since we need to modify them
+	WedgeNode::merge_candidate_node_list(&merged_nodes);
+	++*leaf_wedge_node_counter;
+	if (show_progress && (*leaf_wedge_node_counter % 100) == 0) {
+		printf("\r%.2f%% completed", (100.0 * *leaf_wedge_node_counter / total_num_leaf_wedge_nodes));
+		std::flush(std::cout);
+	}
+	return merged_nodes;
 }
-*/
 
+size_t LeafWedgeNode::count_leaf_wedge_nodes() {
+	return 1;
+}
+
+size_t LeafWedgeNode::count_candidate_nodes() {
+	return entries.size();
+}
 
 InternalWedgeNode::InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
 	WedgeNode(timeseries, M, B, r, NODE_INTERNAL_WEDGE)
@@ -211,4 +262,28 @@ bool InternalWedgeNode::insert_timeseries(Candidate&& C) {
 		}
 	}
 	return split_required;
+}
+
+std::list<CandidateNode> InternalWedgeNode::get_merged_candidate_nodes(bool show_progress, size_t total_num_leaf_wedge_nodes, size_t* leaf_wedge_node_counter) const {
+	std::list<CandidateNode> merged_nodes;
+	for (auto node_ptr : entries)
+		//append all merged descendent candidate nodes to a single list
+		merged_nodes.splice(merged_nodes.end(), std::static_pointer_cast<WedgeNode>(node_ptr)->get_merged_candidate_nodes(show_progress, total_num_leaf_wedge_nodes, leaf_wedge_node_counter));
+	//merge the candidate nodes in the new list
+	WedgeNode::merge_candidate_node_list(&merged_nodes);
+	return merged_nodes;
+}
+
+size_t InternalWedgeNode::count_leaf_wedge_nodes() {
+	size_t count = 0;
+	for (auto node : entries)
+		count += std::static_pointer_cast<WedgeNode>(node)->count_leaf_wedge_nodes();
+	return count;
+}
+
+size_t InternalWedgeNode::count_candidate_nodes() {
+	size_t count = 0;
+	for (auto node : entries)
+		count += std::static_pointer_cast<WedgeNode>(node)->count_candidate_nodes();
+	return count;
 }

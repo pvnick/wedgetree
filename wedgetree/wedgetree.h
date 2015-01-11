@@ -22,7 +22,8 @@ private:
 	bool verbose;
 public:
 	WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, bool verbose);
-	void insert_timeseries(Candidate&& C);
+	void insert_timeseries(size_t candidate_position);
+	std::list<CandidateNode> get_merged_candidate_nodes() const;
 };
 
 #endif
