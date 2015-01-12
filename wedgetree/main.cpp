@@ -1,4 +1,18 @@
+#define DETECT_MEMORY_LEAKS
+
+#ifdef DETECT_MEMORY_LEAKS
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <malloc.h>
+#include <crtdbg.h>
+#ifdef _DEBUG
+#define new new(_CLIENT_BLOCK,__FILE__, __LINE__)
+#endif  // _DEBUG
+#endif
+
+
 #include "node.h"
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -10,9 +24,7 @@ using namespace std;
 
 namespace program_options = boost::program_options;
 
-int main(int argc, char *argv[])
-{
-	CLIOptions::init(argc, argv);
+void do_analysis() {
 	CLIOptions opts = CLIOptions::get_instance();
 
 	std::string const& ts_filepath = opts["timeseries"].as<std::string>();
@@ -33,5 +45,18 @@ int main(int argc, char *argv[])
 	double r = 300;
 	WedgeTree tree(timeseries, M, B, r, verbose);
 	tree.get_merged_candidate_nodes();
+}
+
+int main(int argc, char *argv[])
+{
+#ifdef DETECT_MEMORY_LEAKS
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+	CLIOptions::init(argc, argv);
+	auto start = std::chrono::high_resolution_clock::now();
+	do_analysis();
+	auto end = std::chrono::high_resolution_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+	std::cout << "Analysis took " << elapsed.count() << " seconds" << std::endl;
 	return 0;
 }

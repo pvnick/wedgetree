@@ -18,7 +18,7 @@ private:
 	size_t M;
 	size_t B;
 	double r;
-	std::shared_ptr<InternalWedgeNode> root;
+	std::unique_ptr<InternalWedgeNode> root;
 	bool verbose;
 public:
 	WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, bool verbose);

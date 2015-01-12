@@ -10,16 +10,17 @@ class Wedge {
 	//every node stores a wedge, which tightly bounds all of its descendent candidates
 private:
 	struct BoundaryPosition {
-		size_t c_index;
 		double ED = 0;
 		double Ui = std::numeric_limits<double>::min();
 		double Li = std::numeric_limits<double>::max();
-		bool operator<(BoundaryPosition const& other) const {
-			return ED < other.ED;
+		struct Compare {
+			std::vector<BoundaryPosition> const& boundary_positions;
+			bool operator()(size_t const& c_index1, size_t const& c_index2) const {
+				return boundary_positions[c_index1].ED < boundary_positions[c_index2].ED;
+			}
+			Compare(std::vector<BoundaryPosition> const& boundary_positions) : boundary_positions(boundary_positions) { }
 		};
-		BoundaryPosition(size_t c_index) : c_index(c_index) {}
 	};
-	typedef std::vector<std::shared_ptr<BoundaryPosition>> sorter;
 	std::vector<double> const& timeseries;
 	size_t M;
 	size_t B;
@@ -28,8 +29,9 @@ private:
 	bool enlarged = false;
 	static size_t id_counter; //holds the number of instantiated wedges
 	size_t id; //set to the value of id_counter when this wedge was created
-	sorter sorted_boundary;
-	std::vector<std::shared_ptr<BoundaryPosition>> boundary_handles_by_c_index;
+	std::vector<size_t> bound_pos_indices_sorted;
+	std::vector<BoundaryPosition> boundary_positions;
+	BoundaryPosition::Compare bound_comparator;
 public:
 	Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r);
 	double enlargement_necessary(Candidate const& C, double abandon_after) const;
