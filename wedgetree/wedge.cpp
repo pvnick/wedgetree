@@ -154,7 +154,7 @@ void Wedge::enlarge(Candidate const& C) {
 			//sorted_boundary.increase(heap_handles[i]);
 		}
 	}
-	//std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
+	std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
 	/*for (size_t i : bound_pos_indices_sorted)
 		std::cout << boundary_positions[i].ED << " ";
 	std::cout << std::endl;*/
@@ -182,7 +182,7 @@ void Wedge::enlarge(Wedge const& other_wedge) {
 			//sorted_boundary.increase(heap_handles[i]);
 		}
 	}
-	//std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
+	std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
 	/*for (size_t i : bound_pos_indices_sorted)
 		std::cout << boundary_positions[i].ED << " ";
 	std::cout << std::endl;*/

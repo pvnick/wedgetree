@@ -153,6 +153,7 @@ bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 std::list<CandidateNode> LeafWedgeNode::get_merged_candidate_nodes(bool show_progress, unsigned int depth, size_t total_num_leaf_wedge_nodes, size_t* leaf_wedge_node_counter) const {
 	std::list<CandidateNode> merged_nodes;
 	for (std::unique_ptr<Node> const& node_ptr : entries) {
+		//obtain a copy of the candidate node since we need to be able to modify it
 		CandidateNode n = *dynamic_cast<CandidateNode*>(node_ptr.get()); //xxx is this the right way to do this?
 		merged_nodes.push_back(std::move(n));
 	}

@@ -58,5 +58,7 @@ int main(int argc, char *argv[])
 	auto end = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
 	std::cout << "Analysis took " << elapsed.count() << " seconds" << std::endl;
+	//unsorted 2131
+	//sorted 1484 (30% faster)
 	return 0;
 }
