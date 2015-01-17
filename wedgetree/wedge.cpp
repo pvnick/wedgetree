@@ -10,6 +10,7 @@
 #endif  // _DEBUG
 #endif
 
+#include <cassert>
 #include <algorithm>
 #include "wedge.h"
 #include "boundaryposition.h"
@@ -17,18 +18,21 @@
 
 size_t Wedge::id_counter = 0;
 
-Wedge::Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
+Wedge::Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R) :
 	timeseries(timeseries),
 	M(M),
 	B(B),
 	r(r),
+	R(R),
 	id(++id_counter),
 	boundary_positions(M),
-	bound_comparator(boundary_positions)
+	bound_pos_indices_ED_sorted(M),
+	bound_pos_indices_LB_keough_sorted(M),
+	bound_UL_ED_comparator(boundary_positions)
 { 
-	bound_pos_indices_sorted.reserve(M + 1); //reserve an extra slot for insertion before erase when resorting
 	for (size_t i = 0; i != M; ++i) {
-		bound_pos_indices_sorted.push_back(i);
+		bound_pos_indices_ED_sorted[i] = i;
+		bound_pos_indices_LB_keough_sorted[i] = i;
 		boundary_positions[i].index = i;
 	}
 }
@@ -36,9 +40,7 @@ Wedge::Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r
 double Wedge::enlargement_necessary(Candidate const& C, double abandon_after = std::numeric_limits<double>::max()) const {
 	double enlargement = 0;
 	if (enlarged) {
-		auto boundary_iter_end = bound_pos_indices_sorted.end();
-		for (auto boundary_iter = bound_pos_indices_sorted.begin(); boundary_iter != boundary_iter_end; ++boundary_iter) {
-			size_t c_index = *boundary_iter;
+		for (size_t c_index : bound_pos_indices_ED_sorted) {
 			BoundaryPosition const& bound = boundary_positions[c_index];
 			double val = C.series_normalized[c_index];
 			if (val < bound.Li)
@@ -55,9 +57,7 @@ double Wedge::enlargement_necessary(Candidate const& C, double abandon_after = s
 double Wedge::enlargement_necessary(Wedge const& other_wedge, double abandon_after = std::numeric_limits<double>::max()) const {
 	double enlargement = 0;
 	if (enlarged) {
-		auto boundary_iter_end = bound_pos_indices_sorted.end();
-		for (auto boundary_iter = bound_pos_indices_sorted.begin(); boundary_iter != boundary_iter_end; ++boundary_iter) {
-			size_t c_index = *boundary_iter;
+		for (size_t c_index : bound_pos_indices_ED_sorted) {
 			BoundaryPosition const& bound = boundary_positions[c_index];
 			BoundaryPosition const& other_bound = other_wedge.boundary_positions[c_index];
 			if (other_bound.Li < bound.Li)
@@ -75,9 +75,7 @@ double Wedge::get_new_ED(Candidate const& C, double abandon_after = std::numeric
 	//return the ED of the upper and lower bound if a candidate is added to this wedge
 	double new_ED = ED;
 	if (enlarged) {
-		auto boundary_iter_end = bound_pos_indices_sorted.end();
-		for (auto boundary_iter = bound_pos_indices_sorted.begin(); boundary_iter != boundary_iter_end; ++boundary_iter) {
-			size_t c_index = *boundary_iter;
+		for (size_t c_index : bound_pos_indices_ED_sorted) {
 			BoundaryPosition const& bound = boundary_positions[c_index];
 			double val = C.series_normalized[c_index];
 			bool outside_boundary = false;
@@ -105,9 +103,7 @@ double Wedge::get_new_ED(Wedge const& other_wedge, double abandon_after = std::n
 	//return the ED of the upper and lower bound if a candidate is added to this wedge
 	double new_ED = ED;
 	if (enlarged) {
-		auto boundary_iter_end = bound_pos_indices_sorted.end();
-		for (auto boundary_iter = bound_pos_indices_sorted.begin(); boundary_iter != boundary_iter_end; ++boundary_iter) {
-			size_t c_index = *boundary_iter;
+		for (size_t c_index : bound_pos_indices_ED_sorted) {
 			BoundaryPosition const& bound = boundary_positions[c_index];
 			BoundaryPosition const& other_bound = other_wedge.boundary_positions[c_index];
 			bool outside_boundary = false;
@@ -131,6 +127,27 @@ double Wedge::get_new_ED(Wedge const& other_wedge, double abandon_after = std::n
 	return new_ED;
 }
 
+void Wedge::recalculate_DTW_envelope() {
+	for (BoundaryPosition const& bound : boundary_positions) {
+		size_t l_limit_inclusive = 0;
+		if (bound.index > R) l_limit_inclusive = bound.index - R;
+		size_t r_limit_exclusive = std::min(M, bound.index + R);
+		if (bound.Ui > bound.DTW_Ui) {
+			//update DTW_U
+			for (size_t i = l_limit_inclusive; i != r_limit_exclusive; ++i) {
+				boundary_positions[i].DTW_Ui = bound.Ui;
+			}
+		}
+		if (bound.Li < bound.DTW_Li) {
+			//update DTW_L
+			for (size_t i = l_limit_inclusive; i != r_limit_exclusive; ++i) {
+				boundary_positions[i].DTW_Li = bound.Li;
+			}
+		}
+	}
+	std::sort(bound_pos_indices_LB_keough_sorted.begin(), bound_pos_indices_LB_keough_sorted.end(), BoundaryPosition::Compare_DTW_UL(boundary_positions));
+}
+
 void Wedge::enlarge(Candidate const& C) {
 	for (size_t c_index = 0; c_index != M; ++c_index) {
 		bool outside_boundary = false;
@@ -143,14 +160,14 @@ void Wedge::enlarge(Candidate const& C) {
 			bound.Li = C.series_normalized[c_index];
 			outside_boundary = true;
 		}
-		if (outside_boundary && bound.Ui - bound.Li > 0) {
+		if (outside_boundary) {
 			ED -= bound.ED; //subtract the old distance between the two bounds at this point
 			bound.ED = MathUtils::fastdist(bound.Ui, bound.Li); //store the new distance
 			ED += bound.ED; //add the new distance between the two bounds at this point
 		}
 	}
 	//sort the boundary positions in order of increasing distance to allow for faster early abandonming
-	std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
+	std::sort(bound_pos_indices_ED_sorted.begin(), bound_pos_indices_ED_sorted.end(), bound_UL_ED_comparator);
 	enlarged = true;
 }
 
@@ -174,6 +191,6 @@ void Wedge::enlarge(Wedge const& other_wedge) {
 		}
 	}
 	//sort the boundary positions in order of increasing distance to allow for faster early abandonming
-	std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
+	std::sort(bound_pos_indices_ED_sorted.begin(), bound_pos_indices_ED_sorted.end(), bound_UL_ED_comparator);
 	enlarged = true;
 }

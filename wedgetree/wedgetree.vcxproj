@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="lb_keough.cpp" />
     <ClCompile Include="lb_kim.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cli_options.cpp" />
@@ -142,6 +143,7 @@
     <ClInclude Include="boundaryposition.h" />
     <ClInclude Include="candidate.h" />
     <ClInclude Include="cli_options.h" />
+    <ClInclude Include="lb_keough.h" />
     <ClInclude Include="lb_kim.h" />
     <ClInclude Include="mathutils.h" />
     <ClInclude Include="node.h" />

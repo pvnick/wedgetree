@@ -18,10 +18,11 @@ private:
 	size_t M;
 	size_t B;
 	double r;
+	size_t R;
 	std::unique_ptr<InternalWedgeNode> root;
 	bool verbose;
 public:
-	WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, bool verbose);
+	WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R, bool verbose);
 	void insert_timeseries(size_t candidate_position);
 	std::list<CandidateNode> get_merged_candidate_nodes() const;
 };

@@ -43,7 +43,8 @@ void do_analysis() {
 
 	size_t B = 5;
 	double r = 300;
-	WedgeTree tree(timeseries, M, B, r, verbose);
+	size_t R = 10;
+	WedgeTree tree(timeseries, M, B, r, R, verbose);
 	tree.get_merged_candidate_nodes();
 }
 

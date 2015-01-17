@@ -45,6 +45,9 @@
     <ClCompile Include="lb_kim.cpp">
       <Filter>Source Files\lowerbound</Filter>
     </ClCompile>
+    <ClCompile Include="lb_keough.cpp">
+      <Filter>Source Files\lowerbound</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cli_options.h">
@@ -70,6 +73,9 @@
     </ClInclude>
     <ClInclude Include="mathutils.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lb_keough.h">
+      <Filter>Header Files\lowerbound</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

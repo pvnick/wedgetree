@@ -8,9 +8,9 @@
 #include "wedge.h"
 
 namespace LowerBound {
-	class KimWedge {
-	//fast, O(1) lower bound. 
-	//lower bounds LB_Kim between C and every candidate held in the wedge
+	class KeoughWedge { 
+	//tight O(N) lower bound
+	//lower bounds LB_Keough between C and every candidate held in the wedge
 	private:
 		static double dist(double x, BoundaryPosition const& bound);
 	public:

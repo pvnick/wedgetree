@@ -14,13 +14,13 @@
 
 size_t Node::id_counter = 0;
 
-Node::Node(std::vector<double> const& timeseries, size_t M, size_t B, double r, NodeType node_type) :
+Node::Node(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R, NodeType node_type) :
 	timeseries(timeseries),
 	id(++id_counter),
 	M(M),
 	B(B),
 	r(r),
-	W(timeseries, M, B, r),
+	W(timeseries, M, B, r, R),
 	node_type(node_type)
 { }
 
@@ -32,8 +32,8 @@ Node::NodeType Node::get_node_type() const {
 	return node_type;
 }
 
-CandidateNode::CandidateNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-	Node(timeseries, M, B, r, NODE_CANDIDATE)
+CandidateNode::CandidateNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R) :
+	Node(timeseries, M, B, r, R, NODE_CANDIDATE)
 { }
 
 bool CandidateNode::can_contain_candidate(Candidate const& C) const {
@@ -70,8 +70,12 @@ size_t CandidateNode::get_height() const {
 	return 1;
 }
 
-WedgeNode::WedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, NodeType node_type) :
-	Node(timeseries, M, B, r, node_type)
+void CandidateNode::recalculate_wedge_lb_keough_envelopes() {
+	W.recalculate_DTW_envelope();
+}
+
+WedgeNode::WedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R, NodeType node_type) :
+	Node(timeseries, M, B, r, R, node_type)
 { 
 	entries.reserve(B + 1); //reserve space for allowed capacity plus one for pre-splitting overflow
 }
@@ -115,8 +119,15 @@ size_t WedgeNode::get_height() const {
 	return 1 + max_height;
 }
 
-LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-	WedgeNode(timeseries, M, B, r, NODE_LEAF_WEDGE)
+void WedgeNode::recalculate_wedge_lb_keough_envelopes() {
+	W.recalculate_DTW_envelope();
+	for (std::unique_ptr<Node> const& node : entries) {
+		node->recalculate_wedge_lb_keough_envelopes();
+	}
+}
+
+LeafWedgeNode::LeafWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R) :
+	WedgeNode(timeseries, M, B, r, R, NODE_LEAF_WEDGE)
 { }
 
 bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
@@ -124,7 +135,7 @@ bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 	bool split_required = false;
 	W.enlarge(C);
 	if (entries.empty()) {
-		std::unique_ptr<CandidateNode> n = std::unique_ptr<CandidateNode>(new CandidateNode(timeseries, M, B, r));
+		std::unique_ptr<CandidateNode> n = std::unique_ptr<CandidateNode>(new CandidateNode(timeseries, M, B, r, R));
 		n->insert_timeseries(std::forward<Candidate>(C));
 		entries.push_back(std::move(n));
 	}
@@ -138,7 +149,7 @@ bool LeafWedgeNode::insert_timeseries(Candidate&& C) {
 		else {
 			//insertion to entry at a leaf node can be done only when the enlargement satisfies the condition W_UL <= r; otherwise
 			//we have to create a new entry at that leaf node
-			std::unique_ptr<CandidateNode> n = std::unique_ptr<CandidateNode>(new CandidateNode(timeseries, M, B, r));
+			std::unique_ptr<CandidateNode> n = std::unique_ptr<CandidateNode>(new CandidateNode(timeseries, M, B, r, R));
 			n->insert_timeseries(std::forward<Candidate>(C));
 			entries.push_back(std::move(n));
 		}
@@ -189,8 +200,8 @@ size_t LeafWedgeNode::count_candidate_nodes() const {
 	return entries.size();
 }
 
-InternalWedgeNode::InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r) :
-	WedgeNode(timeseries, M, B, r, NODE_INTERNAL_WEDGE)
+InternalWedgeNode::InternalWedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R) :
+	WedgeNode(timeseries, M, B, r, R, NODE_INTERNAL_WEDGE)
 { }
 
 void InternalWedgeNode::split_child(size_t target_entry_index) {
@@ -222,12 +233,12 @@ void InternalWedgeNode::split_child(size_t target_entry_index) {
 	WedgeNode* new_entry2;
 	switch (target->get_node_type()) {
 	case NODE_INTERNAL_WEDGE:
-		new_entry1 = new InternalWedgeNode(timeseries, M, B, r);
-		new_entry2 = new InternalWedgeNode(timeseries, M, B, r);
+		new_entry1 = new InternalWedgeNode(timeseries, M, B, r, R);
+		new_entry2 = new InternalWedgeNode(timeseries, M, B, r, R);
 		break;
 	case NODE_LEAF_WEDGE:
-		new_entry1 = new LeafWedgeNode(timeseries, M, B, r);
-		new_entry2 = new LeafWedgeNode(timeseries, M, B, r);
+		new_entry1 = new LeafWedgeNode(timeseries, M, B, r, R);
+		new_entry2 = new LeafWedgeNode(timeseries, M, B, r, R);
 		break;
 	default:
 		throw new std::logic_error("Unexpected node type");
@@ -260,7 +271,7 @@ bool InternalWedgeNode::insert_timeseries(Candidate&& C) {
 	bool split_required = false;
 	W.enlarge(C);
 	if (entries.empty()) {
-		std::unique_ptr<LeafWedgeNode> n(new LeafWedgeNode(timeseries, M, B, r));
+		std::unique_ptr<LeafWedgeNode> n(new LeafWedgeNode(timeseries, M, B, r, R));
 		//no need to check for if a split is necessary since the candidate is guaranteed to insertable into a fresh node
 		n->insert_timeseries(std::forward<Candidate>(C));
 		add_entry(std::move(n));

@@ -12,12 +12,13 @@
 
 #include "wedgetree.h"
 
-WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, bool verbose = false) :
+WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R, bool verbose = false) :
 	timeseries(timeseries),
 	M(M),
 	B(B),
-	r(r),
-	root(new InternalWedgeNode(timeseries, M, B, r)),
+	r(r), 
+	R(R),
+	root(new InternalWedgeNode(timeseries, M, B, r, R)),
 	verbose(verbose)
 {
 	if (timeseries.size() < M)
@@ -44,6 +45,12 @@ WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, 
 	}
 	if (verbose)
 		std::cout << "\r100.0% completed" << std::endl;
+	if (verbose) {
+		std::cout << "Calculating lb_keough envelopes... ";
+		root->recalculate_wedge_lb_keough_envelopes();
+		std::cout << "done" << std::endl;
+	}
+
 }
 
 void WedgeTree::insert_timeseries(size_t candidate_position) {
@@ -51,7 +58,7 @@ void WedgeTree::insert_timeseries(size_t candidate_position) {
 		//root overflow. add a new root to contain the old root, then split the old root
 		std::unique_ptr<InternalWedgeNode> old_root = std::move(root);
 		old_root->is_tree_root = false;
-		root = std::unique_ptr<InternalWedgeNode>(new InternalWedgeNode(timeseries, M, B, r));
+		root = std::unique_ptr<InternalWedgeNode>(new InternalWedgeNode(timeseries, M, B, r, R));
 		root->add_entry(std::move(old_root));
 		root->is_tree_root = true;
 		root->split_child(0);
