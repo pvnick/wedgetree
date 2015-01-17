@@ -10,7 +10,10 @@
 #endif  // _DEBUG
 #endif
 
+#include <algorithm>
 #include "wedge.h"
+#include "boundaryposition.h"
+#include "mathutils.h"
 
 size_t Wedge::id_counter = 0;
 
@@ -26,6 +29,7 @@ Wedge::Wedge(std::vector<double> const& timeseries, size_t M, size_t B, double r
 	bound_pos_indices_sorted.reserve(M + 1); //reserve an extra slot for insertion before erase when resorting
 	for (size_t i = 0; i != M; ++i) {
 		bound_pos_indices_sorted.push_back(i);
+		boundary_positions[i].index = i;
 	}
 }
 
@@ -88,7 +92,7 @@ double Wedge::get_new_ED(Candidate const& C, double abandon_after = std::numeric
 			}
 			if (outside_boundary) {
 				new_ED -= bound.ED;
-				new_ED += std::pow(new_U - new_L, 2);
+				new_ED += MathUtils::fastdist(new_U, new_L);
 			}
 			if (new_ED > abandon_after)
 				break;
@@ -118,7 +122,7 @@ double Wedge::get_new_ED(Wedge const& other_wedge, double abandon_after = std::n
 			}
 			if (outside_boundary) {
 				new_ED -= bound.ED;
-				new_ED += std::pow(new_U - new_L, 2);
+				new_ED += MathUtils::fastdist(new_U, new_L);
 			}
 			if (new_ED > abandon_after)
 				break;
@@ -141,23 +145,12 @@ void Wedge::enlarge(Candidate const& C) {
 		}
 		if (outside_boundary && bound.Ui - bound.Li > 0) {
 			ED -= bound.ED; //subtract the old distance between the two bounds at this point
-			bound.ED = std::pow(bound.Ui - bound.Li, 2); //store the new distance
+			bound.ED = MathUtils::fastdist(bound.Ui, bound.Li); //store the new distance
 			ED += bound.ED; //add the new distance between the two bounds at this point
-			//boundary position may get moved back in the sorted vector
-			/*auto reposition_iter = bound_pos_indices_sorted.begin() + c_index;
-			auto insertion_position = std::upper_bound(reposition_iter, bound_pos_indices_sorted.end(), bound.ED, bound_comparator);
-			if (reposition_iter != insertion_position) {
-				bound_pos_indices_sorted.insert(insertion_position, c_index);
-				bound_pos_indices_sorted.erase(bound_pos_indices_sorted.begin() + c_index);
-			}*/
-			//need to sort at this point
-			//sorted_boundary.increase(heap_handles[i]);
 		}
 	}
+	//sort the boundary positions in order of increasing distance to allow for faster early abandonming
 	std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
-	/*for (size_t i : bound_pos_indices_sorted)
-		std::cout << boundary_positions[i].ED << " ";
-	std::cout << std::endl;*/
 	enlarged = true;
 }
 
@@ -176,15 +169,11 @@ void Wedge::enlarge(Wedge const& other_wedge) {
 		}
 		if (outside_boundary) {
 			ED -= bound.ED; //subtract the old distance between the two bounds at this point
-			bound.ED = std::pow(bound.Ui - bound.Li, 2); //store the new distance
+			bound.ED = MathUtils::fastdist(bound.Ui, bound.Li); //store the new distance
 			ED += bound.ED; //add the new distance between the two bounds at this point
-			//need to sort here
-			//sorted_boundary.increase(heap_handles[i]);
 		}
 	}
+	//sort the boundary positions in order of increasing distance to allow for faster early abandonming
 	std::sort(bound_pos_indices_sorted.begin(), bound_pos_indices_sorted.end(), bound_comparator);
-	/*for (size_t i : bound_pos_indices_sorted)
-		std::cout << boundary_positions[i].ED << " ";
-	std::cout << std::endl;*/
 	enlarged = true;
 }
