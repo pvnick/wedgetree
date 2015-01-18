@@ -29,7 +29,7 @@ WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, 
 	//4046418
 	root->is_tree_root = true;
 	size_t ts_size = timeseries.size();
-	for (size_t C_index = 0; C_index + M - 1 != ts_size; ++C_index) {
+	for (size_t C_index = 0; C_index + M - 1 != 10000 /* ts_size*/; ++C_index) {
 		insert_timeseries(C_index);
 		/*std::vector<std::unique_ptr<Node>> const& entries = root->get_entries();
 		if ((C_index % 100) == 0) {
@@ -54,7 +54,7 @@ WedgeTree::WedgeTree(std::vector<double> const& timeseries, size_t M, size_t B, 
 }
 
 void WedgeTree::insert_timeseries(size_t candidate_position) {
-	if (root->insert_timeseries(Candidate(timeseries, candidate_position, M))) {
+	if (root->insert_timeseries(Candidate(timeseries, candidate_position, M, R))) {
 		//root overflow. add a new root to contain the old root, then split the old root
 		std::unique_ptr<InternalWedgeNode> old_root = std::move(root);
 		old_root->is_tree_root = false;

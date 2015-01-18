@@ -20,6 +20,7 @@ Node::Node(std::vector<double> const& timeseries, size_t M, size_t B, double r, 
 	M(M),
 	B(B),
 	r(r),
+	R(R),
 	W(timeseries, M, B, r, R),
 	node_type(node_type)
 { }
@@ -77,7 +78,7 @@ void CandidateNode::recalculate_wedge_lb_keough_envelopes() {
 WedgeNode::WedgeNode(std::vector<double> const& timeseries, size_t M, size_t B, double r, size_t R, NodeType node_type) :
 	Node(timeseries, M, B, r, R, node_type)
 { 
-	entries.reserve(B + 1); //reserve space for allowed capacity plus one for pre-splitting overflow
+	entries.reserve(B);
 }
 
 void WedgeNode::clear_entries() {

@@ -146,6 +146,12 @@ void Wedge::recalculate_DTW_envelope() {
 		}
 	}
 	std::sort(bound_pos_indices_LB_keough_sorted.begin(), bound_pos_indices_LB_keough_sorted.end(), BoundaryPosition::Compare_DTW_UL(boundary_positions));
+	for (size_t i = 0; i != M; ++i) {
+		BoundaryPosition const& bound = boundary_positions[i]; 
+		std::cout << "{" << bound.DTW_Ui << " - " << bound.DTW_Li << "=" << bound.DTW_Ui - bound.DTW_Li << " (" << bound.Ui << ", " << bound.Li << ")}, " << std::endl;
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void Wedge::enlarge(Candidate const& C) {
@@ -164,6 +170,11 @@ void Wedge::enlarge(Candidate const& C) {
 			ED -= bound.ED; //subtract the old distance between the two bounds at this point
 			bound.ED = MathUtils::fastdist(bound.Ui, bound.Li); //store the new distance
 			ED += bound.ED; //add the new distance between the two bounds at this point
+		}
+	}
+	for (BoundaryPosition const& bound : boundary_positions) {
+		if (bound.Ui < -1000 || bound.Li > 1000) {
+			std::cout << "bad" << std::endl;
 		}
 	}
 	//sort the boundary positions in order of increasing distance to allow for faster early abandonming
